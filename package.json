@@ -1,0 +1,13 @@
+{
+  "name": "mailcheck",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MailCheck - checks an email's domain and mail setup. Does not confirm that a mailbox exists.",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "netlify dev",
+    "test": "node test/run-tests.js"
+  }
+}

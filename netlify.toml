@@ -1,0 +1,17 @@
+# MailCheck - Netlify settings
+
+[build]
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"
+  included_files = ["data/**"]
+  node_bundler = "esbuild"
+
+# Security headers for the whole site
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"

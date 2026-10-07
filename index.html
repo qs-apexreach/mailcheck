@@ -1,0 +1,2693 @@
+<!DOCTYPE html>
+<!--
+  MailCheck - single file (HTML + CSS + JavaScript in one page)
+
+  LIST OF ALL IDS
+
+  Page:         skip-link, site-header, logo-link, main-content, site-footer
+  Navigation:   nav-check-link, nav-bulk-link, nav-how-link, theme-toggle
+  Hero:         hero-section, hero-title, hero-subtext, honest-note, demo-badge
+  Single check: check-section, check-title, check-form, email-input, email-hint,
+                check-btn, loading-indicator, error-message
+  Result card:  result-card, result-title, result-email, score-badge, result-reason,
+                result-checklist, result-note
+  Result rows (each has row-NAME, status-NAME, detail-NAME):
+                format, domain, mx, spf-dmarc, disposable, role, free-business, typo
+  Bulk:         bulk-section, bulk-title, bulk-instructions, bulk-drop-zone, bulk-file,
+                bulk-file-name, bulk-error, bulk-summary, bulk-start-btn, bulk-stop-btn,
+                bulk-progress-wrap, bulk-progress, bulk-progress-text, bulk-results,
+                bulk-totals, bulk-table, bulk-table-body, download-csv-btn
+  How it works: how-section, how-title, how-card-1, how-card-2, how-card-3
+  Footer:       footer-note, footer-copy
+  Made by JavaScript: typo-suggest-btn (the "Did you mean" button), bulk-row-0, bulk-row-1, ...
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MailCheck - Free Email Verifier</title>
+  <meta name="description" content="MailCheck is a free email verifier. Check the domain and mail setup of an email address, one by one or in bulk. It cannot confirm that a specific mailbox exists.">
+
+  <!-- Favicon: inline SVG as a data: address, so no extra file is needed -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234F46E5'/%3E%3Crect x='12' y='19' width='40' height='27' rx='5' fill='%23ffffff'/%3E%3Cpath d='M14 22 L32 36 L50 22' fill='none' stroke='%234F46E5' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='48' cy='46' r='11' fill='%2316A34A' stroke='%234F46E5' stroke-width='3'/%3E%3Cpath d='M43 46 L47 50 L53 42' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+  <!-- Applies the saved theme BEFORE the page paints, so there is no flash -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("mailcheck-theme");
+        if (saved === "dark" || saved === "light") {
+          document.documentElement.setAttribute("data-theme", saved);
+        }
+      } catch (e) { /* storage blocked: the device setting is used instead */ }
+    })();
+  </script>
+
+  <!-- Google Fonts (the only outside resource). If offline, system fonts are used. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet">
+
+  <style>
+/* ==========================================================
+   MailCheck styles
+   Order: 1 tokens, 2 reset + base, 3 layout, 4 components,
+          5 breakpoints, 6 motion
+   ========================================================== */
+
+
+/* ==========================================================
+   1. DESIGN TOKENS
+   ========================================================== */
+
+/* ---------- Light theme (default) ---------- */
+:root {
+  color-scheme: light;
+
+  /* Fonts (with system fallbacks) */
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-heading: "Space Grotesk", "Inter", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+
+  /* Colors */
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-text: #0F172A;
+  --color-muted: #64748B;
+  --color-border: #E2E8F0;
+  --color-primary: #4F46E5;
+  --color-on-primary: #FFFFFF;
+  --color-primary-hover: #4338CA;
+  --color-surface-alt: #F1F5F9;
+  --color-border-strong: #CBD5E1;
+  --color-header-bg: rgba(248, 250, 252, 0.85);
+  --tint-primary: rgba(79, 70, 229, 0.08);
+  --hero-glow: rgba(79, 70, 229, 0.14);
+  --hero-glow-2: rgba(22, 163, 74, 0.08);
+
+  /* Status colors */
+  --color-good: #16A34A;
+  --color-risky: #D97706;
+  --color-bad: #DC2626;
+  --color-unknown: #64748B;
+
+  /* Readable text versions of the status colors */
+  --color-good-text: #15803D;
+  --color-risky-text: #B45309;
+  --color-bad-text: #B91C1C;
+  --color-unknown-text: #475569;
+
+  /* Soft backgrounds for the status colors */
+  --tint-good: rgba(22, 163, 74, 0.12);
+  --tint-risky: rgba(217, 119, 6, 0.14);
+  --tint-bad: rgba(220, 38, 38, 0.10);
+  --tint-unknown: rgba(100, 116, 139, 0.12);
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  /* Shadows (soft) */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.10);
+
+  /* Focus ring */
+  --focus-ring: 0 0 0 3px rgba(79, 70, 229, 0.45);
+
+  /* Fluid font sizes (they grow smoothly with the screen) */
+  --text-sm: clamp(0.875rem, 0.85rem + 0.1vw, 0.9375rem);
+  --text-base: clamp(1rem, 0.97rem + 0.15vw, 1.0625rem);
+  --text-lg: clamp(1.125rem, 1.05rem + 0.35vw, 1.3125rem);
+  --text-xl: clamp(1.375rem, 1.2rem + 0.9vw, 1.875rem);
+  --text-hero: clamp(2rem, 1.4rem + 3vw, 3.5rem);
+
+  /* Layout */
+  --container: 1100px;
+  --header-offset: 120px;
+  --tap-size: 44px;
+}
+
+/* ---------- Dark theme: used when the toggle sets data-theme="dark" ---------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-background: #0B1120;
+  --color-surface: #111827;
+  --color-text: #F1F5F9;
+  --color-muted: #94A3B8;
+  --color-border: #1F2937;
+  --color-primary: #818CF8;
+  --color-on-primary: #0B1120;
+  --color-primary-hover: #A5B4FC;
+  --color-surface-alt: #1A2332;
+  --color-border-strong: #334155;
+  --color-header-bg: rgba(11, 17, 32, 0.80);
+  --tint-primary: rgba(129, 140, 248, 0.14);
+  --hero-glow: rgba(129, 140, 248, 0.20);
+  --hero-glow-2: rgba(74, 222, 128, 0.07);
+
+  --color-good-text: #4ADE80;
+  --color-risky-text: #FBBF24;
+  --color-bad-text: #F87171;
+  --color-unknown-text: #94A3B8;
+
+  --tint-good: rgba(74, 222, 128, 0.14);
+  --tint-risky: rgba(251, 191, 36, 0.14);
+  --tint-bad: rgba(248, 113, 113, 0.14);
+  --tint-unknown: rgba(148, 163, 184, 0.14);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.40);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.50);
+
+  --focus-ring: 0 0 0 3px rgba(129, 140, 248, 0.55);
+}
+
+/* ---------- Dark theme: follows the device setting if the user has not chosen ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --color-background: #0B1120;
+    --color-surface: #111827;
+    --color-text: #F1F5F9;
+    --color-muted: #94A3B8;
+    --color-border: #1F2937;
+    --color-primary: #818CF8;
+    --color-on-primary: #0B1120;
+    --color-primary-hover: #A5B4FC;
+    --color-surface-alt: #1A2332;
+    --color-border-strong: #334155;
+    --color-header-bg: rgba(11, 17, 32, 0.80);
+    --tint-primary: rgba(129, 140, 248, 0.14);
+    --hero-glow: rgba(129, 140, 248, 0.20);
+    --hero-glow-2: rgba(74, 222, 128, 0.07);
+
+    --color-good-text: #4ADE80;
+    --color-risky-text: #FBBF24;
+    --color-bad-text: #F87171;
+    --color-unknown-text: #94A3B8;
+
+    --tint-good: rgba(74, 222, 128, 0.14);
+    --tint-risky: rgba(251, 191, 36, 0.14);
+    --tint-bad: rgba(248, 113, 113, 0.14);
+    --tint-unknown: rgba(148, 163, 184, 0.14);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.40);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.50);
+
+    --focus-ring: 0 0 0 3px rgba(129, 140, 248, 0.55);
+  }
+}
+
+
+/* ==========================================================
+   2. RESET + BASE
+   ========================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100.0%;
+  scroll-padding-top: var(--header-offset); /* keeps anchor links below the sticky header */
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--color-text);
+  background-color: var(--color-background);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, p, ul, ol {
+  margin: 0;
+}
+
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-heading);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+svg {
+  display: block;
+  max-width: 100.0%;
+}
+
+button, input {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--color-primary);
+}
+
+/* Visible keyboard focus for everything */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  box-shadow: var(--focus-ring);
+}
+
+/* Boxes that only get focus from JavaScript (result card, main area) do not need a heavy ring */
+.site-main:focus-visible,
+.result-card:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.result-card:focus-visible {
+  box-shadow: var(--shadow-md);
+}
+
+/* ---------- Utility classes ---------- */
+
+/* The hidden attribute must really hide things */
+.hidden,
+[hidden] {
+  display: none !important;
+}
+
+/* Hidden on screen but still read by screen readers */
+.visually-hidden,
+.drop-zone-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* "Skip to main content" link: shows only when it has focus */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: var(--space-4);
+  z-index: 100;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: var(--space-3);
+}
+
+
+/* ==========================================================
+   3. LAYOUT (mobile first)
+   ========================================================== */
+
+/* ---------- Header (sticky + blurred) ---------- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding-block: var(--space-3);
+  /* lines the header content up with the main container */
+  padding-inline: max(var(--space-4), calc((100.0% - var(--container)) / 2));
+  background-color: var(--color-header-bg);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.logo-link {
+  order: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-size);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.logo-image {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+}
+
+.logo-text {
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+.theme-toggle {
+  order: 2;
+  margin-left: auto;
+}
+
+.site-nav {
+  order: 3;
+  width: 100.0%;
+}
+
+/* On small screens the menu scrolls sideways inside itself */
+.nav-list {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-size);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  background-color: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
+/* ---------- Main container ---------- */
+.site-main {
+  flex: 1;
+  width: 100.0%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--space-4);
+}
+
+/* ---------- Hero (soft gradient panel) ---------- */
+.hero-section {
+  margin-top: var(--space-5);
+  padding: var(--space-7) var(--space-4) var(--space-6);
+  background-color: var(--color-surface);
+  background-image:
+    radial-gradient(ellipse 80% 70% at 50% 0%, var(--hero-glow), transparent 70%),
+    radial-gradient(ellipse 50% 50% at 100.0% 100.0%, var(--hero-glow-2), transparent 70%);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.hero-title {
+  max-width: 16ch;
+  margin-inline: auto;
+  font-size: var(--text-hero);
+  text-wrap: balance;
+}
+
+.hero-subtext {
+  max-width: 56ch;
+  margin: var(--space-4) auto 0;
+  color: var(--color-muted);
+  font-size: var(--text-lg);
+}
+
+.honest-note {
+  max-width: 62ch;
+  margin: var(--space-5) auto 0;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--text-sm);
+  text-align: left;
+}
+
+/* "Demo mode" badge */
+.demo-badge {
+  display: inline-block;
+  margin-bottom: var(--space-4);
+  padding: var(--space-1) var(--space-4);
+  background-color: var(--tint-risky);
+  color: var(--color-risky-text);
+  border: 1px solid var(--color-risky);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+/* ---------- Sections ---------- */
+.check-section,
+.bulk-section,
+.how-section {
+  padding-block: var(--space-6);
+}
+
+.section-title {
+  margin-bottom: var(--space-4);
+  font-size: var(--text-xl);
+}
+
+.section-text {
+  margin-bottom: var(--space-4);
+  color: var(--color-muted);
+}
+
+/* ---------- Footer ---------- */
+.site-footer {
+  margin-top: var(--space-7);
+  padding-block: var(--space-6);
+  padding-inline: max(var(--space-4), calc((100.0% - var(--container)) / 2));
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.footer-note {
+  max-width: 62ch;
+  margin-inline: auto;
+}
+
+.footer-copy {
+  margin-top: var(--space-3);
+}
+
+
+/* ==========================================================
+   4. COMPONENTS
+   ========================================================== */
+
+/* ---------- Buttons ---------- */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  min-width: var(--tap-size);
+  padding: 0 var(--space-5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.btn:active {
+  transform: translateY(1px) scale(0.98); /* press effect */
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-surface-alt);
+  border-color: var(--color-primary);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-border-strong);
+}
+
+.btn-ghost:hover {
+  background-color: var(--tint-primary);
+  border-color: var(--color-primary);
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Loading state: a small spinner appears inside the button */
+.btn.is-loading::before {
+  content: "";
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-size);
+  min-width: var(--tap-size);
+  padding: 0 var(--space-4);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  background-color: var(--color-surface-alt);
+  border-color: var(--color-primary);
+}
+
+.theme-toggle:active {
+  transform: scale(0.97);
+}
+
+/* ---------- Status colors (shared by badge, rows, chips) ---------- */
+.status-good {
+  --status-color: var(--color-good);
+  --status-text: var(--color-good-text);
+  --status-tint: var(--tint-good);
+}
+
+.status-risky {
+  --status-color: var(--color-risky);
+  --status-text: var(--color-risky-text);
+  --status-tint: var(--tint-risky);
+}
+
+.status-bad {
+  --status-color: var(--color-bad);
+  --status-text: var(--color-bad-text);
+  --status-tint: var(--tint-bad);
+}
+
+.status-unknown {
+  --status-color: var(--color-unknown);
+  --status-text: var(--color-unknown-text);
+  --status-tint: var(--tint-unknown);
+}
+
+/* ---------- Single check form (a card) ---------- */
+.check-form {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "label"
+    "input"
+    "hint"
+    "button"
+    "loading"
+    "error";
+  padding: var(--space-5);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.form-label  { grid-area: label; font-weight: 600; }
+.form-input  { grid-area: input; }
+.form-hint   { grid-area: hint; color: var(--color-muted); font-size: var(--text-sm); }
+.check-form .btn { grid-area: button; }
+.loading-indicator { grid-area: loading; }
+.check-form .error-message { grid-area: error; }
+
+.form-input {
+  width: 100.0%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 var(--space-4);
+  background-color: var(--color-background);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  font-size: 1rem; /* at least 16px, so phones do not zoom in */
+}
+
+.form-input::placeholder {
+  color: var(--color-muted);
+}
+
+.form-input:focus {
+  border-color: var(--color-primary);
+}
+
+.form-input[aria-invalid="true"] {
+  border-color: var(--color-bad);
+}
+
+.form-input[readonly] {
+  opacity: 0.75;
+}
+
+.loading-indicator {
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
+.error-message {
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--tint-bad);
+  color: var(--color-bad-text);
+  border-left: 4px solid var(--color-bad);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Result card ---------- */
+.result-card {
+  margin-top: var(--space-5);
+  scroll-margin-top: var(--header-offset);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.result-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.result-heading {
+  min-width: 0;
+}
+
+.result-title {
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.result-email {
+  margin-top: var(--space-1);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.result-reason {
+  padding: var(--space-3) var(--space-5);
+  background-color: var(--color-surface-alt);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+}
+
+.result-note {
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
+/* Empty reason or note: hide the empty strip */
+.result-reason:empty,
+.result-note:empty {
+  display: none;
+}
+
+/* Score badge (Good, Risky, Bad, Unknown) */
+.score-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--space-4);
+  background-color: var(--status-tint, var(--tint-unknown));
+  color: var(--status-text, var(--color-unknown-text));
+  border: 1px solid var(--status-color, var(--color-unknown));
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Checklist rows. The row itself gets a status-* class from JavaScript. */
+.check-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "label status"
+    "detail detail";
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.check-row:last-child {
+  border-bottom: 0;
+}
+
+.check-row > * {
+  min-width: 0;
+}
+
+.check-label  { grid-area: label; }
+.check-status { grid-area: status; }
+.check-detail { grid-area: detail; }
+
+.check-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-weight: 600;
+}
+
+.check-status {
+  color: var(--status-text, var(--color-unknown-text));
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+/* The round icon is drawn with CSS. It is hidden from screen readers in the HTML (aria-hidden). */
+.check-icon {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  background-color: var(--status-color, var(--color-unknown));
+  color: #FFFFFF;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.check-icon::before                         { content: "?"; }
+.check-row.status-good .check-icon::before    { content: "\2713"; }
+.check-row.status-risky .check-icon::before   { content: "!"; }
+.check-row.status-bad .check-icon::before     { content: "\2715"; }
+.check-row.status-unknown .check-icon::before { content: "?"; }
+
+.check-detail {
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+/* "Did you mean ...?" button */
+.typo-suggest-btn {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100.0%;
+  min-height: var(--tap-size);
+  margin-top: var(--space-2);
+  padding: var(--space-1) var(--space-4);
+  background-color: var(--tint-primary);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.typo-suggest-btn:hover {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+/* ---------- Bulk section ---------- */
+.drop-zone {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+  background-color: var(--color-surface);
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.drop-zone:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+/* JavaScript adds this class while a file is dragged over the zone */
+.drop-zone.dragover {
+  background-color: var(--tint-primary);
+  border-color: var(--color-primary);
+  border-style: solid;
+}
+
+.drop-zone-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 var(--space-5);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.drop-zone-label:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.drop-zone-text {
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
+.drop-zone-file {
+  max-width: 100.0%;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Buttons sit directly in the bulk section */
+.bulk-section > .btn {
+  margin-top: var(--space-4);
+  margin-right: var(--space-2);
+}
+
+.bulk-section > .error-message,
+.bulk-section > .bulk-summary {
+  margin-top: var(--space-4);
+}
+
+.bulk-summary {
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface-alt);
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+.bulk-progress-wrap {
+  margin-top: var(--space-5);
+}
+
+.bulk-progress {
+  display: block;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100.0%;
+  height: 12px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background-color: var(--color-border);
+  overflow: hidden;
+}
+
+.bulk-progress::-webkit-progress-bar {
+  background-color: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+.bulk-progress::-webkit-progress-value {
+  background-color: var(--color-primary);
+  border-radius: var(--radius-full);
+}
+
+.bulk-progress::-moz-progress-bar {
+  background-color: var(--color-primary);
+  border-radius: var(--radius-full);
+}
+
+.bulk-progress-text {
+  margin-top: var(--space-2);
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
+/* Totals: Good / Risky / Bad / Unknown chips */
+.bulk-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block: var(--space-5) var(--space-3);
+}
+
+.total-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  background-color: var(--status-tint, var(--tint-unknown));
+  color: var(--status-text, var(--color-unknown-text));
+  border: 1px solid var(--status-color, var(--color-unknown));
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.bulk-results > .btn {
+  margin-top: var(--space-4);
+}
+
+/* Results table: scrolls inside its own box, the header row stays visible */
+.table-wrap {
+  max-width: 100.0%;
+  max-height: min(60vh, 520px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.bulk-table {
+  width: 100.0%;
+  min-width: 560px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--text-sm);
+}
+
+.bulk-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface-alt);
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  font-weight: 600;
+}
+
+.bulk-table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+/* Row tint by score (each row gets a status-* class from JavaScript) */
+.bulk-table tbody tr {
+  background-color: var(--status-tint, transparent);
+}
+
+.bulk-table tbody tr td:first-child {
+  box-shadow: inset 4px 0 0 var(--status-color, transparent);
+}
+
+.bulk-table .score-badge {
+  min-height: 28px;
+  padding: 0 var(--space-3);
+  font-size: 0.8125rem;
+}
+
+/* ---------- How it works cards ---------- */
+.card-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.info-card {
+  padding: var(--space-5);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.info-card-title {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-lg);
+}
+
+.info-card-text {
+  color: var(--color-muted);
+}
+
+
+/* ==========================================================
+   5. BREAKPOINTS (mobile first: 640px, 900px, 1200px)
+   ========================================================== */
+
+@media (min-width: 640px) {
+  :root {
+    --header-offset: 88px;
+  }
+
+  /* Header: logo | nav | toggle on one line */
+  .site-nav {
+    order: 2;
+    width: auto;
+    flex: 1;
+  }
+
+  .theme-toggle {
+    order: 3;
+    margin-left: 0;
+  }
+
+  .site-main {
+    padding-inline: var(--space-5);
+  }
+
+  .hero-section {
+    padding: var(--space-8) var(--space-5) var(--space-7);
+  }
+
+  /* Input and button on the same row */
+  .check-form {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "label label"
+      "input button"
+      "hint hint"
+      "loading loading"
+      "error error";
+    column-gap: var(--space-3);
+  }
+
+  /* Checklist: label | status | detail */
+  .check-row {
+    grid-template-columns: minmax(150px, 210px) 110px minmax(0, 1fr);
+    grid-template-areas: "label status detail";
+    gap: var(--space-3);
+  }
+}
+
+@media (min-width: 900px) {
+  .check-section,
+  .bulk-section,
+  .how-section {
+    padding-block: var(--space-7);
+  }
+
+  .check-form {
+    padding: var(--space-6);
+  }
+
+  .drop-zone {
+    padding: var(--space-7) var(--space-5);
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-5);
+  }
+
+  .info-card {
+    padding: var(--space-6);
+  }
+}
+
+@media (min-width: 1200px) {
+  .site-main {
+    padding-inline: 0;
+  }
+
+  .hero-section {
+    padding-block: 96px var(--space-8);
+  }
+
+  .check-section,
+  .bulk-section,
+  .how-section {
+    padding-block: var(--space-8);
+  }
+}
+
+
+/* ==========================================================
+   6. MOTION (all of it is switched off if the user asks their
+      device for reduced motion)
+   ========================================================== */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes row-in {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Smooth color change when switching light and dark */
+  body,
+  .site-header,
+  .site-footer,
+  .hero-section,
+  .check-form,
+  .result-card,
+  .info-card,
+  .drop-zone,
+  .form-input,
+  .table-wrap,
+  .honest-note,
+  .theme-toggle,
+  .nav-link {
+    transition: background-color 0.25s ease, color 0.25s ease,
+                border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .btn {
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+                box-shadow 0.2s ease, transform 0.12s ease, opacity 0.2s ease;
+  }
+
+  .btn.is-loading::before {
+    animation: spin 0.7s linear infinite;
+  }
+
+  /* The result card fades in, then the rows appear one by one */
+  .result-card.animate-in {
+    animation: fade-in-up 0.5s ease both;
+  }
+
+  .result-card.animate-in .check-row {
+    animation: row-in 0.4s ease both;
+  }
+
+  .result-card.animate-in .check-row:nth-child(1) { animation-delay: 0.10s; }
+  .result-card.animate-in .check-row:nth-child(2) { animation-delay: 0.17s; }
+  .result-card.animate-in .check-row:nth-child(3) { animation-delay: 0.24s; }
+  .result-card.animate-in .check-row:nth-child(4) { animation-delay: 0.31s; }
+  .result-card.animate-in .check-row:nth-child(5) { animation-delay: 0.38s; }
+  .result-card.animate-in .check-row:nth-child(6) { animation-delay: 0.45s; }
+  .result-card.animate-in .check-row:nth-child(7) { animation-delay: 0.52s; }
+  .result-card.animate-in .check-row:nth-child(8) { animation-delay: 0.59s; }
+
+  /* The progress bar fills smoothly */
+  .bulk-progress::-webkit-progress-value {
+    transition: width 0.3s ease;
+  }
+
+  .bulk-progress::-moz-progress-bar {
+    transition: width 0.3s ease;
+  }
+
+  .bulk-table tbody tr {
+    animation: fade-in 0.3s ease both;
+    transition: background-color 0.3s ease;
+  }
+}
+  </style>
+</head>
+<body>
+
+  <!-- Lets keyboard users jump past the menu -->
+  <a id="skip-link" class="skip-link" href="#main-content">Skip to main content</a>
+
+  <!-- ========== HEADER ========== -->
+  <header id="site-header" class="site-header">
+    <a id="logo-link" class="logo-link" href="#main-content" aria-label="MailCheck home">
+      <!-- Logo: inline SVG, no image file needed -->
+      <svg class="logo-image" viewBox="0 0 64 64" width="32" height="32" role="img" aria-label="MailCheck logo" focusable="false">
+        <rect width="64" height="64" rx="14" fill="#4F46E5"/>
+        <rect x="12" y="19" width="40" height="27" rx="5" fill="#FFFFFF"/>
+        <path d="M14 22 L32 36 L50 22" fill="none" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="48" cy="46" r="11" fill="#16A34A" stroke="#4F46E5" stroke-width="3"/>
+        <path d="M43 46 L47 50 L53 42" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="logo-text">MailCheck</span>
+    </a>
+
+    <nav class="site-nav" aria-label="Main navigation">
+      <ul class="nav-list">
+        <li><a id="nav-check-link" class="nav-link" href="#check-section">Check</a></li>
+        <li><a id="nav-bulk-link" class="nav-link" href="#bulk-section">Bulk</a></li>
+        <li><a id="nav-how-link" class="nav-link" href="#how-section">How it works</a></li>
+      </ul>
+    </nav>
+
+    <!-- Dark mode button (JavaScript updates the text, aria-label and aria-pressed) -->
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark mode">
+      <span class="theme-toggle-text">Dark mode</span>
+    </button>
+  </header>
+
+  <main id="main-content" class="site-main" tabindex="-1">
+
+    <!-- ========== HERO ========== -->
+    <section id="hero-section" class="hero-section" aria-labelledby="hero-title">
+      <!-- Shown only while demo mode is on -->
+      <p id="demo-badge" class="demo-badge" hidden>Demo mode: results are fake</p>
+      <h1 id="hero-title" class="hero-title">Check any email address in seconds</h1>
+      <p id="hero-subtext" class="hero-subtext">
+        Spot risky addresses before you send, by looking at the domain and mail setup behind them.
+      </p>
+      <p id="honest-note" class="honest-note">This tool checks the domain and email setup. It cannot confirm that a specific mailbox exists.</p>
+    </section>
+
+    <!-- ========== SINGLE CHECK ========== -->
+    <section id="check-section" class="check-section" aria-labelledby="check-title">
+      <h2 id="check-title" class="section-title">Check one email</h2>
+
+      <form id="check-form" class="check-form" novalidate>
+        <label for="email-input" class="form-label">Email address</label>
+        <input
+          id="email-input"
+          class="form-input"
+          type="email"
+          name="email"
+          placeholder="name@example.com"
+          autocomplete="email"
+          autocapitalize="none"
+          spellcheck="false"
+          aria-describedby="email-hint error-message"
+          required>
+        <p id="email-hint" class="form-hint">Type one email address, then press Enter or the button.</p>
+
+        <button id="check-btn" class="btn btn-primary" type="submit">Check Email</button>
+
+        <!-- Shown while the check is running -->
+        <p id="loading-indicator" class="loading-indicator" role="status" aria-live="polite" hidden>Checking, please wait...</p>
+
+        <!-- Shown when something goes wrong -->
+        <p id="error-message" class="error-message" role="alert" aria-live="assertive" hidden></p>
+      </form>
+
+      <!-- Result card (hidden until a result exists) -->
+      <article id="result-card" class="result-card" aria-live="polite" aria-labelledby="result-title" hidden>
+        <header class="result-header">
+          <div class="result-heading">
+            <h3 id="result-title" class="result-title">Result</h3>
+            <p id="result-email" class="result-email"></p>
+          </div>
+          <span id="score-badge" class="score-badge status-unknown">Unknown</span>
+        </header>
+
+        <p id="result-reason" class="result-reason"></p>
+
+        <ul id="result-checklist" class="result-checklist">
+
+          <li id="row-format" class="check-row status-unknown">
+            <span class="check-label"><span class="check-icon" aria-hidden="true"></span>Format</span>
+            <span id="status-format" class="check-status">Unknown</span>
+            <span id="detail-format" class="check-detail">Checks that the email is written correctly.</span>
+          </li>
+
+          <li id="row-domain" class="check-row status-unknown">
+            <span class="check-label"><span class="check-icon" aria-hidden="true"></span>Domain live</span>
+            <span id="status-domain" class="check-status">Unknown</span>
+            <span id="detail-domain" class="check-detail">Checks that the domain exists and is online.</span>
+          </li>
+
+          <li id="row-mx" class="check-row status-unknown">
+            <span class="check-label"><span class="check-icon" aria-hidden="true"></span>MX records</span>
+            <span id="status-mx" class="check-status">Unknown</span>
+            <span id="detail-mx" class="check-detail">Checks that the domain can receive email.</span>
+          </li>
+
+          <li id="row-spf-dmarc" class="check-row status-unknown">
+            <span class="check-label"><span class="check-icon" aria-hidden="true"></span>SPF / DMARC</span>
+            <span id="status-spf-dmarc" class="check-status">Unknown</span>
+            <span id="detail-spf-dmarc" class="check-detail">Checks for anti-spoofing rules on the domain.</span>
+          </li>
+
+          <li id="row-disposable" class="check-row status-unknown">
+            <span class="check-label"><span class="check-icon" aria-hidden="true"></span>Disposable</span>
+            <span id="status-disposable" class="check-status">Unknown</span>
+            <span id="detail-disposable" class="check-detail">Checks if this is a throwaway email service.</span>
+          </li>
+
+          <li id="row-role" class="check-row status-unknown">
+            <span class="check-label"><span class="check-icon" aria-hidden="true"></span>Role email</span>
+            <span id="status-role" class="check-status">Unknown</span>
+            <span id="detail-role" class="check-detail">Checks for shared inboxes like info@ or sales@.</span>
+          </li>
+
+          <li id="row-free-business" class="check-row status-unknown">
+            <span class="check-label"><span class="check-icon" aria-hidden="true"></span>Free vs business</span>
+            <span id="status-free-business" class="check-status">Unknown</span>
+            <span id="detail-free-business" class="check-detail">Shows if it is a free provider or a company domain.</span>
+          </li>
+
+          <li id="row-typo" class="check-row status-unknown">
+            <span class="check-label"><span class="check-icon" aria-hidden="true"></span>Typo suggestion</span>
+            <span id="status-typo" class="check-status">Unknown</span>
+            <span id="detail-typo" class="check-detail">Suggests a fix if the domain looks misspelled.</span>
+          </li>
+
+        </ul>
+
+        <!-- The server's meta.note text goes here -->
+        <p id="result-note" class="result-note"></p>
+      </article>
+    </section>
+
+    <!-- ========== BULK CHECK ========== -->
+    <section id="bulk-section" class="bulk-section" aria-labelledby="bulk-title">
+      <h2 id="bulk-title" class="section-title">Check many emails</h2>
+      <p id="bulk-instructions" class="section-text">Upload a .csv or .txt file. One email per line, or a column named email.</p>
+
+      <!-- Drag-and-drop area -->
+      <div id="bulk-drop-zone" class="drop-zone">
+        <label for="bulk-file" class="drop-zone-label">Choose a file</label>
+        <input id="bulk-file" class="drop-zone-input" type="file" accept=".csv,.txt,text/csv,text/plain" aria-describedby="bulk-instructions">
+        <p class="drop-zone-text">or drag and drop it here</p>
+        <p id="bulk-file-name" class="drop-zone-file" aria-live="polite">No file selected</p>
+      </div>
+
+      <p id="bulk-error" class="error-message" role="alert" aria-live="assertive" hidden></p>
+      <p id="bulk-summary" class="bulk-summary" role="status" aria-live="polite" hidden></p>
+
+      <button id="bulk-start-btn" class="btn btn-primary" type="button">Start Bulk Check</button>
+      <button id="bulk-stop-btn" class="btn btn-ghost" type="button" hidden>Stop</button>
+
+      <!-- Progress (hidden until a bulk check starts) -->
+      <div id="bulk-progress-wrap" class="bulk-progress-wrap" hidden>
+        <progress id="bulk-progress" class="bulk-progress" value="0" max="100" aria-label="Bulk check progress">0%</progress>
+        <p id="bulk-progress-text" class="bulk-progress-text" role="status" aria-live="polite">0 of 0 checked</p>
+      </div>
+
+      <!-- Results (hidden until a bulk check starts) -->
+      <div id="bulk-results" class="bulk-results" hidden>
+        <div id="bulk-totals" class="bulk-totals" role="group" aria-label="Totals by score"></div>
+
+        <div class="table-wrap" role="region" aria-label="Bulk check results table" tabindex="0">
+          <table id="bulk-table" class="bulk-table">
+            <thead>
+              <tr>
+                <th scope="col">Email</th>
+                <th scope="col">Score</th>
+                <th scope="col">Reason</th>
+              </tr>
+            </thead>
+            <tbody id="bulk-table-body">
+              <!-- JavaScript adds one row for each email here -->
+            </tbody>
+          </table>
+        </div>
+
+        <button id="download-csv-btn" class="btn btn-secondary" type="button">Download Results CSV</button>
+      </div>
+    </section>
+
+    <!-- ========== HOW IT WORKS ========== -->
+    <section id="how-section" class="how-section" aria-labelledby="how-title">
+      <h2 id="how-title" class="section-title">How it works</h2>
+
+      <div class="card-grid">
+        <article id="how-card-1" class="info-card">
+          <h3 class="info-card-title">1. Enter an email</h3>
+          <p class="info-card-text">Type one address, or upload a file with many. Nothing to install and no sign-up.</p>
+        </article>
+
+        <article id="how-card-2" class="info-card">
+          <h3 class="info-card-title">2. We check the setup</h3>
+          <p class="info-card-text">We look at the format, the domain, the mail servers (MX), SPF and DMARC rules, and known disposable or role addresses.</p>
+        </article>
+
+        <article id="how-card-3" class="info-card">
+          <h3 class="info-card-title">3. Get a clear score</h3>
+          <p class="info-card-text">You see Good, Risky or Bad, with a short reason for each check so you know what to do next.</p>
+        </article>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========== FOOTER ========== -->
+  <footer id="site-footer" class="site-footer">
+    <p id="footer-note" class="footer-note">MailCheck checks the domain and email setup only. It cannot confirm that a specific mailbox exists, so treat every score as a helpful guide, not a final answer.</p>
+    <p id="footer-copy" class="footer-copy">&copy; 2026 MailCheck. Built with HTML, CSS and JavaScript.</p>
+  </footer>
+
+  <script>
+/* ==========================================================
+   MailCheck - JavaScript
+   Everything is inside one function, so nothing leaks into
+   the global scope.
+   Parts: 1 settings, 2 constants, 3 helpers, 4 elements,
+          5 theme, 6 checking an email, 7 single check,
+          8 CSV tools, 9 bulk check, 10 start-up
+   ========================================================== */
+
+(function () {
+  "use strict";
+
+  /* ========================================================
+     1. SETTINGS
+     ======================================================== */
+  const CONFIG = {
+    FORCE_MOCK: null,   // null = automatic, true = always demo, false = always real
+    ENDPOINT: "/.netlify/functions/check-email",
+    TIMEOUT_MS: 15000,
+    BULK_MAX: 500,
+    BULK_CONCURRENCY: 4
+  };
+
+  /*
+    Demo (mock) mode is ON when:
+    - FORCE_MOCK is true, or
+    - FORCE_MOCK is null AND the page is opened from a local file, or the address has ?demo=1
+  */
+  function detectDemoMode() {
+    if (CONFIG.FORCE_MOCK === true) { return true; }
+    if (CONFIG.FORCE_MOCK === false) { return false; }
+    try {
+      if (window.location.protocol === "file:") { return true; }
+      return new URLSearchParams(window.location.search).get("demo") === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  const DEMO_MODE = detectDemoMode();
+
+  /* ========================================================
+     2. CONSTANTS
+     ======================================================== */
+  const THEME_KEY = "mailcheck-theme";
+  const MAX_FILE_BYTES = 2 * 1024 * 1024; // 2 MB
+
+  // The 8 checks. "key" is the name in the JSON, "rowId" is the part used in the HTML ids.
+  const CHECKS = [
+    { key: "format",        rowId: "format",        csvName: "Format" },
+    { key: "domain",        rowId: "domain",        csvName: "Domain live" },
+    { key: "mx",            rowId: "mx",            csvName: "MX records" },
+    { key: "spf_dmarc",     rowId: "spf-dmarc",     csvName: "SPF/DMARC" },
+    { key: "disposable",    rowId: "disposable",    csvName: "Disposable" },
+    { key: "role",          rowId: "role",          csvName: "Role email" },
+    { key: "free_business", rowId: "free-business", csvName: "Free vs business" },
+    { key: "typo",          rowId: "typo",          csvName: "Typo suggestion" }
+  ];
+
+  const VALID_STATUSES = ["pass", "warn", "fail", "unknown"];
+  const VALID_SCORES = ["good", "risky", "bad", "unknown"];
+
+  const STATUS_CLASS = { pass: "status-good", warn: "status-risky", fail: "status-bad", unknown: "status-unknown" };
+  const STATUS_LABEL = { pass: "Pass", warn: "Warning", fail: "Fail", unknown: "Unknown" };
+  const SCORE_CLASS = { good: "status-good", risky: "status-risky", bad: "status-bad", unknown: "status-unknown" };
+  const SCORE_LABEL = { good: "Good", risky: "Risky", bad: "Bad", unknown: "Unknown" };
+  const ALL_STATUS_CLASSES = ["status-good", "status-risky", "status-bad", "status-unknown"];
+
+  const DEFAULT_REASON = {
+    good: "This email looks good. The domain and mail setup look healthy.",
+    risky: "This email may cause problems. Check the details below.",
+    bad: "This email is likely to fail. Check the details below.",
+    unknown: "We could not decide a score for this email."
+  };
+
+  // Friendly messages. We never show raw errors or stack traces.
+  const ERROR_MESSAGES = {
+    timeout: "The check took too long. Please try again.",
+    network: "We could not reach the checking service. Please check your internet connection and try again.",
+    notfound: "The checking service was not found. If you own this site, please check that the function was deployed correctly.",
+    rate: "Too many checks at once. Please wait a moment and try again.",
+    server: "The checking service had a problem. Please try again in a moment.",
+    "bad-json": "We got an unexpected answer from the checking service. Please try again.",
+    cancelled: "The check was stopped."
+  };
+
+  // Fake data used only in demo mode
+  const MOCK = {
+    disposable: ["mailinator.com", "tempmail.com", "10minutemail.com", "guerrillamail.com", "yopmail.com", "trashmail.com"],
+    free: ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com"],
+    roles: ["info", "sales", "admin", "support", "contact", "hello"],
+    typos: {
+      "gmial.com": "gmail.com",
+      "gmal.com": "gmail.com",
+      "gamil.com": "gmail.com",
+      "yaho.com": "yahoo.com",
+      "hotmial.com": "hotmail.com",
+      "outlok.com": "outlook.com"
+    }
+  };
+
+  /* ========================================================
+     3. SMALL HELPERS
+     ======================================================== */
+
+  function byId(id) {
+    return document.getElementById(id);
+  }
+
+  // These helpers do nothing if an element is missing, so the page never crashes.
+  function setHidden(el, hidden) { if (el) { el.hidden = hidden; } }
+  function setText(el, text) { if (el) { el.textContent = text; } }
+  function setDisabled(el, disabled) { if (el) { el.disabled = disabled; } }
+
+  function clearChildren(el) {
+    while (el && el.firstChild) {
+      el.removeChild(el.firstChild);
+    }
+  }
+
+  function isObject(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+
+  function plural(count, one, many) {
+    return count === 1 ? one : (many || one + "s");
+  }
+
+  function prefersReducedMotion() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+
+  // Replace the status-* class on an element (good, risky, bad, unknown)
+  function setStatusClass(el, className) {
+    if (!el) { return; }
+    ALL_STATUS_CLASSES.forEach(function (c) { el.classList.remove(c); });
+    el.classList.add(className);
+  }
+
+  function normalizeEmail(value) {
+    return String(value === null || value === undefined ? "" : value).trim().toLowerCase();
+  }
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) { return bytes + " B"; }
+    if (bytes < 1024 * 1024) { return Math.round(bytes / 1024) + " KB"; }
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  }
+
+  function todayStamp() {
+    const d = new Date();
+    const pad = function (n) { return String(n).padStart(2, "0"); };
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+
+  /*
+    Quick format check (runs in the browser before calling the server).
+    It is not perfect on purpose. The server does the deeper check.
+  */
+  function isValidEmailFormat(email) {
+    if (typeof email !== "string" || email.length === 0 || email.length > 254) { return false; }
+    const pattern = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
+    if (!pattern.test(email)) { return false; }
+    const parts = email.split("@");
+    const local = parts[0];
+    const domain = parts[1];
+    if (local.length > 64) { return false; }
+    if (local.charAt(0) === "." || local.charAt(local.length - 1) === "." || local.indexOf("..") !== -1) { return false; }
+    const tld = domain.split(".").pop();
+    return tld.length >= 2;
+  }
+
+  // A tiny error type, so we know what went wrong without showing technical text
+  function CheckError(kind) {
+    this.name = "CheckError";
+    this.kind = kind;
+  }
+
+  function isCancelled(err) {
+    return !!err && err.kind === "cancelled";
+  }
+
+  function friendlyMessage(err) {
+    return (err && ERROR_MESSAGES[err.kind]) || "Something went wrong. Please try again.";
+  }
+
+  /* ========================================================
+     4. ELEMENTS
+     ======================================================== */
+  const els = {
+    html: document.documentElement,
+    themeToggle: byId("theme-toggle"),
+    demoBadge: byId("demo-badge"),
+    form: byId("check-form"),
+    emailInput: byId("email-input"),
+    checkBtn: byId("check-btn"),
+    loading: byId("loading-indicator"),
+    error: byId("error-message"),
+    resultCard: byId("result-card"),
+    resultEmail: byId("result-email"),
+    resultReason: byId("result-reason"),
+    resultNote: byId("result-note"),
+    scoreBadge: byId("score-badge"),
+    bulkDropZone: byId("bulk-drop-zone"),
+    bulkFile: byId("bulk-file"),
+    bulkFileName: byId("bulk-file-name"),
+    bulkError: byId("bulk-error"),
+    bulkSummary: byId("bulk-summary"),
+    bulkStartBtn: byId("bulk-start-btn"),
+    bulkStopBtn: byId("bulk-stop-btn"),
+    bulkProgressWrap: byId("bulk-progress-wrap"),
+    bulkProgress: byId("bulk-progress"),
+    bulkProgressText: byId("bulk-progress-text"),
+    bulkResults: byId("bulk-results"),
+    bulkTotals: byId("bulk-totals"),
+    bulkTableBody: byId("bulk-table-body"),
+    downloadBtn: byId("download-csv-btn")
+  };
+
+  // The row, status and detail element for each of the 8 result rows
+  const rowEls = {};
+  CHECKS.forEach(function (def) {
+    rowEls[def.key] = {
+      row: byId("row-" + def.rowId),
+      status: byId("status-" + def.rowId),
+      detail: byId("detail-" + def.rowId)
+    };
+  });
+
+  /* ========================================================
+     5. THEME (light / dark)
+     ======================================================== */
+
+  function getSavedTheme() {
+    try {
+      const value = window.localStorage.getItem(THEME_KEY);
+      return value === "dark" || value === "light" ? value : null;
+    } catch (e) {
+      return null; // storage blocked: just continue without saving
+    }
+  }
+
+  function saveTheme(theme) {
+    try {
+      window.localStorage.setItem(THEME_KEY, theme);
+    } catch (e) {
+      /* ignore: saving is only a nice extra */
+    }
+  }
+
+  function systemPrefersDark() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+
+  // Which theme is showing right now?
+  function getCurrentTheme() {
+    const chosen = els.html.getAttribute("data-theme");
+    if (chosen === "dark" || chosen === "light") { return chosen; }
+    return systemPrefersDark() ? "dark" : "light";
+  }
+
+  function updateThemeToggleUi() {
+    if (!els.themeToggle) { return; }
+    const isDark = getCurrentTheme() === "dark";
+    els.themeToggle.setAttribute("aria-pressed", isDark ? "true" : "false");
+    els.themeToggle.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
+    const label = els.themeToggle.querySelector(".theme-toggle-text");
+    setText(label || els.themeToggle, isDark ? "Light mode" : "Dark mode");
+  }
+
+  function applyTheme(theme, shouldSave) {
+    els.html.setAttribute("data-theme", theme);
+    if (shouldSave) { saveTheme(theme); }
+    updateThemeToggleUi();
+  }
+
+  function initTheme() {
+    const saved = getSavedTheme();
+    if (saved) {
+      applyTheme(saved, false);
+    } else {
+      updateThemeToggleUi(); // first visit: the CSS follows the device setting
+    }
+
+    if (els.themeToggle) {
+      els.themeToggle.addEventListener("click", function () {
+        applyTheme(getCurrentTheme() === "dark" ? "light" : "dark", true);
+      });
+    }
+
+    // If the device setting changes and the user has not chosen, keep the button text correct
+    if (window.matchMedia) {
+      const query = window.matchMedia("(prefers-color-scheme: dark)");
+      const onChange = function () { if (!getSavedTheme()) { updateThemeToggleUi(); } };
+      if (query && query.addEventListener) { query.addEventListener("change", onChange); }
+    }
+  }
+
+  /* ========================================================
+     6. CHECKING AN EMAIL (demo or real)
+     ======================================================== */
+
+  function makeCheck(status, detail) {
+    return { status: status, detail: detail };
+  }
+
+  // Result for an email that is not written correctly (no server needed)
+  function buildBadFormatResult(email) {
+    const checks = {};
+    CHECKS.forEach(function (def) {
+      checks[def.key] = makeCheck("unknown", "Skipped because the format is not valid.");
+    });
+    checks.format = makeCheck("fail", "This is not a valid email format. Example: name@example.com");
+    checks.typo = { status: "unknown", detail: "Skipped because the format is not valid.", suggestion: null };
+    return {
+      email: email,
+      score: "bad",
+      reason: "The email format is not valid.",
+      checks: checks,
+      note: ""
+    };
+  }
+
+  // Wait for some time, but stop right away if the user cancels
+  function delay(ms, signal) {
+    return new Promise(function (resolve, reject) {
+      if (signal && signal.aborted) { reject(new CheckError("cancelled")); return; }
+      const timer = setTimeout(function () {
+        if (signal) { signal.removeEventListener("abort", onAbort); }
+        resolve();
+      }, ms);
+      function onAbort() {
+        clearTimeout(timer);
+        reject(new CheckError("cancelled"));
+      }
+      if (signal) { signal.addEventListener("abort", onAbort, { once: true }); }
+    });
+  }
+
+  // Demo mode: fake results made from simple rules. They follow the same contract as the real server.
+  function buildMockResponse(email) {
+    if (!isValidEmailFormat(email)) {
+      const bad = buildBadFormatResult(email);
+      return { email: bad.email, score: bad.score, reason: bad.reason, checks: bad.checks, meta: mockMeta() };
+    }
+
+    const at = email.lastIndexOf("@");
+    const local = email.slice(0, at);
+    const domain = email.slice(at + 1);
+
+    const checks = {
+      format: makeCheck("pass", "Email format looks correct."),
+      domain: makeCheck("pass", "The domain is online."),
+      mx: makeCheck("pass", "Mail servers were found for this domain."),
+      spf_dmarc: makeCheck("pass", "SPF and DMARC rules are set up."),
+      disposable: makeCheck("pass", "Not a known disposable email service."),
+      role: makeCheck("pass", "Looks like a personal or named inbox."),
+      free_business: makeCheck("pass", "Looks like a business or custom domain."),
+      typo: { status: "pass", detail: "No typo found.", suggestion: null }
+    };
+
+    let score = "good";
+    let reason = DEFAULT_REASON.good;
+
+    if (MOCK.disposable.indexOf(domain) !== -1) {
+      checks.disposable = makeCheck("fail", "This is a disposable (throwaway) email service.");
+      checks.spf_dmarc = makeCheck("warn", "SPF and DMARC rules are weak or missing.");
+      checks.free_business = makeCheck("unknown", "Skipped for disposable domains.");
+      score = "bad";
+      reason = "Disposable email address. These are thrown away after a short time.";
+    } else if (MOCK.typos[domain]) {
+      checks.typo = {
+        status: "warn",
+        detail: "The domain \"" + domain + "\" looks like a typo.",
+        suggestion: MOCK.typos[domain]
+      };
+      checks.mx = makeCheck("warn", "The mail setup looks unusual for this domain.");
+      score = "risky";
+      reason = "The domain looks misspelled. Check the suggestion below.";
+    } else if (MOCK.roles.indexOf(local) !== -1) {
+      checks.role = makeCheck("warn", "Shared role inbox (" + local + "@). Several people may read it.");
+      score = "risky";
+      reason = "Role email. Messages may go to a shared inbox.";
+    }
+
+    if (MOCK.free.indexOf(domain) !== -1) {
+      checks.free_business = makeCheck("warn", "Free email provider (" + domain + "), not a company domain.");
+      if (score === "good") {
+        reason = "This looks like a working free email address. Free providers are fine for personal use.";
+      }
+    }
+
+    return { email: email, score: score, reason: reason, checks: checks, meta: mockMeta() };
+  }
+
+  function mockMeta() {
+    return {
+      checked_at: new Date().toISOString(),
+      mailbox_verified: false,
+      note: "Demo result: this is fake data for testing. The real tool checks the domain and email setup only."
+    };
+  }
+
+  async function mockCheck(email, signal) {
+    await delay(400 + Math.random() * 500, signal); // 400 to 900 ms
+    return buildMockResponse(email);
+  }
+
+  // Real check: call the Netlify Function, with a timeout
+  async function realCheck(email, outerSignal) {
+    const controller = new AbortController();
+    let timedOut = false;
+    const timer = setTimeout(function () {
+      timedOut = true;
+      controller.abort();
+    }, CONFIG.TIMEOUT_MS);
+
+    // If the user presses Stop, cancel this request too
+    const onOuterAbort = function () { controller.abort(); };
+    if (outerSignal) {
+      if (outerSignal.aborted) { controller.abort(); }
+      else { outerSignal.addEventListener("abort", onOuterAbort, { once: true }); }
+    }
+
+    try {
+      const response = await fetch(CONFIG.ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email }),
+        signal: controller.signal
+      });
+
+      // Anything other than 200 is a technical failure, with a friendly message
+      if (response.status === 404) { throw new CheckError("notfound"); }
+      if (response.status === 429) { throw new CheckError("rate"); }
+      if (response.status !== 200) { throw new CheckError("server"); }
+
+      try {
+        return await response.json();
+      } catch (jsonError) {
+        throw new CheckError("bad-json");
+      }
+    } catch (err) {
+      if (err instanceof CheckError) { throw err; }
+      if (err && err.name === "AbortError") {
+        throw new CheckError(timedOut ? "timeout" : "cancelled");
+      }
+      throw new CheckError("network");
+    } finally {
+      clearTimeout(timer);
+      if (outerSignal) { outerSignal.removeEventListener("abort", onOuterAbort); }
+    }
+  }
+
+  function checkEmail(email, signal) {
+    return DEMO_MODE ? mockCheck(email, signal) : realCheck(email, signal);
+  }
+
+  // Try again one time if the first try fails (used by the bulk check)
+  async function checkWithRetry(email, signal) {
+    try {
+      return await checkEmail(email, signal);
+    } catch (err) {
+      // No point in retrying a stop or a missing service
+      if (isCancelled(err) || (err && err.kind === "notfound") || (signal && signal.aborted)) { throw err; }
+      return await checkEmail(email, signal);
+    }
+  }
+
+  /*
+    Make any server answer safe to use.
+    Missing or strange values become "unknown", so the page never crashes.
+    The score is never changed here: it stays whatever the server says.
+  */
+  function normalizeCheck(raw, isTypo) {
+    const source = isObject(raw) ? raw : {};
+    const status = VALID_STATUSES.indexOf(source.status) !== -1 ? source.status : "unknown";
+    let detail = typeof source.detail === "string" ? source.detail.trim() : "";
+    if (!detail && status === "unknown") { detail = "No information available."; }
+
+    const check = { status: status, detail: detail };
+    if (isTypo) {
+      let suggestion = typeof source.suggestion === "string" ? source.suggestion.trim().toLowerCase() : "";
+      // Only accept something that looks like a domain, for example gmail.com
+      if (suggestion.length > 253 || !/^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/.test(suggestion)) { suggestion = ""; }
+      check.suggestion = suggestion || null;
+    }
+    return check;
+  }
+
+  function normalizeResult(data, fallbackEmail) {
+    const source = isObject(data) ? data : {};
+    const rawChecks = isObject(source.checks) ? source.checks : {};
+    const meta = isObject(source.meta) ? source.meta : {};
+    const score = VALID_SCORES.indexOf(source.score) !== -1 ? source.score : "unknown";
+    const reason = typeof source.reason === "string" && source.reason.trim() ? source.reason.trim() : DEFAULT_REASON[score];
+
+    const checks = {};
+    CHECKS.forEach(function (def) {
+      checks[def.key] = normalizeCheck(rawChecks[def.key], def.key === "typo");
+    });
+
+    return {
+      email: typeof source.email === "string" && source.email.trim() ? source.email.trim() : fallbackEmail,
+      score: score,
+      reason: reason,
+      checks: checks,
+      note: typeof meta.note === "string" ? meta.note.trim().slice(0, 500) : ""
+    };
+  }
+
+  /* ========================================================
+     7. SINGLE CHECK (what happens on the screen)
+     ======================================================== */
+
+  const CHECK_BTN_LABEL = els.checkBtn ? els.checkBtn.textContent.trim() : "Check Email";
+  let singleBusy = false;
+
+  function showError(message, markInput) {
+    setText(els.error, message);
+    setHidden(els.error, false);
+    if (els.emailInput && markInput) { els.emailInput.setAttribute("aria-invalid", "true"); }
+  }
+
+  function clearError() {
+    setText(els.error, "");
+    setHidden(els.error, true);
+    if (els.emailInput) { els.emailInput.removeAttribute("aria-invalid"); }
+  }
+
+  // Hide the result card and empty it, so an old result never sits under a new error
+  function clearResultCard() {
+    setHidden(els.resultCard, true);
+    setText(els.resultEmail, "");
+    setText(els.resultReason, "");
+    setText(els.resultNote, "");
+    setText(els.scoreBadge, SCORE_LABEL.unknown);
+    setStatusClass(els.scoreBadge, SCORE_CLASS.unknown);
+    CHECKS.forEach(function (def) {
+      const row = rowEls[def.key];
+      if (!row) { return; }
+      setStatusClass(row.row, STATUS_CLASS.unknown);
+      setText(row.status, STATUS_LABEL.unknown);
+      clearChildren(row.detail); // also removes the "Did you mean" button
+    });
+  }
+
+  function setSingleLoading(isLoading) {
+    singleBusy = isLoading;
+    if (els.checkBtn) {
+      els.checkBtn.disabled = isLoading;
+      els.checkBtn.classList.toggle("is-loading", isLoading);
+      els.checkBtn.setAttribute("aria-busy", isLoading ? "true" : "false");
+      els.checkBtn.textContent = isLoading ? "Checking..." : CHECK_BTN_LABEL;
+    }
+    if (els.emailInput) { els.emailInput.readOnly = isLoading; }
+    setHidden(els.loading, !isLoading);
+  }
+
+  // Fill the result card from a result object
+  function buildResultCard(result) {
+    setText(els.resultEmail, result.email);
+    setText(els.resultReason, result.reason);
+    setText(els.resultNote, result.note);
+
+    setText(els.scoreBadge, SCORE_LABEL[result.score]);
+    setStatusClass(els.scoreBadge, SCORE_CLASS[result.score]);
+
+    CHECKS.forEach(function (def) {
+      const check = result.checks[def.key];
+      const row = rowEls[def.key];
+      if (!row) { return; }
+
+      setStatusClass(row.row, STATUS_CLASS[check.status]); // colors the icon and the status text
+      setText(row.status, STATUS_LABEL[check.status]);
+
+      if (!row.detail) { return; }
+      clearChildren(row.detail);
+      row.detail.appendChild(document.createTextNode(check.detail));
+
+      // "Did you mean ...?" button for typo suggestions
+      if (def.key === "typo" && check.suggestion) {
+        const local = result.email.split("@")[0];
+        const fixedEmail = local + "@" + check.suggestion;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.id = "typo-suggest-btn";
+        button.className = "typo-suggest-btn";
+        button.textContent = "Did you mean " + fixedEmail + "?";
+        button.addEventListener("click", function () {
+          if (els.emailInput) { els.emailInput.value = fixedEmail; }
+          runSingleCheck();
+        });
+        row.detail.appendChild(document.createElement("br"));
+        row.detail.appendChild(button);
+      }
+    });
+  }
+
+  function showResultCard() {
+    const card = els.resultCard;
+    if (!card) { return; }
+    card.hidden = false;
+
+    // Restart the fade-in animation
+    card.classList.remove("animate-in");
+    void card.offsetWidth;
+    card.classList.add("animate-in");
+
+    // Move focus to the card, so keyboard and screen reader users land on the result
+    card.setAttribute("tabindex", "-1");
+    card.focus({ preventScroll: true });
+    if (card.scrollIntoView) {
+      card.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
+    }
+  }
+
+  async function runSingleCheck() {
+    if (singleBusy || !els.emailInput) { return; }
+
+    const email = normalizeEmail(els.emailInput.value);
+    els.emailInput.value = email;
+    clearError();
+    clearResultCard();
+
+    if (!email) {
+      showError("Please type an email address first.", true);
+      els.emailInput.focus();
+      return;
+    }
+    if (!isValidEmailFormat(email)) {
+      showError("That does not look like a valid email address. Please check it and try again. Example: name@example.com", true);
+      els.emailInput.focus();
+      return;
+    }
+
+    setHidden(els.resultCard, true);
+    setSingleLoading(true);
+
+    try {
+      const raw = await checkEmail(email);
+      const result = normalizeResult(raw, email);
+      buildResultCard(result);
+      setSingleLoading(false);
+      showResultCard();
+    } catch (err) {
+      setSingleLoading(false);
+      showError(friendlyMessage(err), false);
+      els.emailInput.focus();
+    }
+  }
+
+  function initSingleCheck() {
+    if (!els.form) { return; }
+    // Pressing Enter or clicking the button both submit the form
+    els.form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      runSingleCheck();
+    });
+    if (els.emailInput) {
+      els.emailInput.addEventListener("input", clearError);
+    }
+  }
+
+  /* ========================================================
+     8. CSV TOOLS
+     ======================================================== */
+
+  /*
+    Real CSV parser.
+    Handles: quoted fields, commas inside quotes, "" for a quote inside quotes,
+    Windows / Mac / Linux line endings, a BOM at the start, and blank lines.
+    Returns a list of rows. Each row is a list of text values.
+  */
+  function parseCsv(text) {
+    if (text.charCodeAt(0) === 0xFEFF) { text = text.slice(1); } // remove the BOM
+
+    const rows = [];
+    let row = [];
+    let field = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+      const ch = text.charAt(i);
+
+      if (inQuotes) {
+        if (ch === "\"") {
+          if (text.charAt(i + 1) === "\"") { field += "\""; i++; }  // doubled quote = one quote
+          else { inQuotes = false; }                                // closing quote
+        } else {
+          field += ch;
+        }
+      } else if (ch === "\"" && field === "") {
+        inQuotes = true;
+      } else if (ch === ",") {
+        row.push(field);
+        field = "";
+      } else if (ch === "\r" || ch === "\n") {
+        if (ch === "\r" && text.charAt(i + 1) === "\n") { i++; }    // Windows line end
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = "";
+      } else {
+        field += ch;
+      }
+    }
+
+    // Last row (when the file does not end with a line break)
+    if (field !== "" || row.length > 0) {
+      row.push(field);
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  // Get the email values: use the "email" column if there is one, otherwise the first column
+  function extractEmailColumn(rows) {
+    if (rows.length === 0) { return []; }
+
+    const header = rows[0].map(function (cell) { return cell.trim().toLowerCase(); });
+    const column = header.indexOf("email");
+    const hasHeader = column !== -1;
+    const dataRows = hasHeader ? rows.slice(1) : rows;
+    const useColumn = hasHeader ? column : 0;
+
+    return dataRows.map(function (r) { return r[useColumn] || ""; });
+  }
+
+  // Trim, lowercase, remove blanks, remove duplicates
+  function cleanEmailList(values) {
+    const seen = new Set();
+    const emails = [];
+    let found = 0;
+    let duplicates = 0;
+
+    values.forEach(function (value) {
+      const email = normalizeEmail(value);
+      if (!email) { return; }
+      found++;
+      if (seen.has(email)) { duplicates++; return; }
+      seen.add(email);
+      emails.push(email);
+    });
+
+    return { emails: emails, found: found, duplicates: duplicates };
+  }
+
+  // Make one CSV cell safe: block spreadsheet formulas, then add quotes if needed
+  function escapeCsvCell(value) {
+    let text = value === null || value === undefined ? "" : String(value);
+    if (/^[=+\-@\t\r]/.test(text)) { text = "'" + text; } // CSV injection protection
+    if (/[",\r\n]/.test(text)) { text = "\"" + text.replace(/"/g, "\"\"") + "\""; }
+    return text;
+  }
+
+  function toCsv(rows) {
+    return rows.map(function (row) {
+      return row.map(escapeCsvCell).join(",");
+    }).join("\r\n");
+  }
+
+  function readFileAsText(file) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function () { resolve(String(reader.result)); };
+      reader.onerror = function () { reject(new Error("read-failed")); };
+      reader.readAsText(file);
+    });
+  }
+
+  /* ========================================================
+     9. BULK CHECK
+     ======================================================== */
+
+  let pendingEmails = [];       // the clean list, ready to check
+  let bulkRunning = false;
+  let bulkController = null;    // used to stop a running bulk check
+  let bulkRowRefs = [];         // table row pieces, one per email
+  let bulkResults = [];         // one result entry per email
+  let bulkTotal = 0;
+  let bulkDone = 0;
+  let fileToken = 0;            // ignores an old file if the user picks a new one quickly
+
+  const BULK_START_LABEL = els.bulkStartBtn ? els.bulkStartBtn.textContent.trim() : "Start Bulk Check";
+  const BULK_STOP_LABEL = els.bulkStopBtn ? els.bulkStopBtn.textContent.trim() : "Stop";
+
+  function showBulkError(message) {
+    setText(els.bulkError, message);
+    setHidden(els.bulkError, false);
+  }
+
+  function clearBulkError() {
+    setText(els.bulkError, "");
+    setHidden(els.bulkError, true);
+  }
+
+  function validateBulkFile(file) {
+    if (!file) { return "No file was selected."; }
+    const name = String(file.name).toLowerCase();
+    if (!/\.(csv|txt)$/.test(name)) { return "Please choose a .csv or .txt file."; }
+    if (file.size === 0) { return "That file is empty. Please choose another file."; }
+    if (file.size > MAX_FILE_BYTES) { return "That file is bigger than 2 MB. Please use a smaller file."; }
+    return null;
+  }
+
+  // Remove old results from the screen
+  function resetBulkOutput() {
+    setHidden(els.bulkProgressWrap, true);
+    setHidden(els.bulkResults, true);
+    clearChildren(els.bulkTableBody);
+    clearChildren(els.bulkTotals);
+    bulkResults = [];
+    bulkRowRefs = [];
+    bulkTotal = 0;
+    bulkDone = 0;
+  }
+
+  async function handleBulkFile(file) {
+    if (bulkRunning) {
+      showBulkError("Please wait for the current check to finish, or press Stop.");
+      return;
+    }
+
+    const token = ++fileToken;
+    clearBulkError();
+    setHidden(els.bulkSummary, true);
+    pendingEmails = [];
+
+    const problem = validateBulkFile(file);
+    if (problem) {
+      setText(els.bulkFileName, "No file selected");
+      showBulkError(problem);
+      return;
+    }
+
+    setText(els.bulkFileName, file.name + " (" + formatBytes(file.size) + ")");
+
+    let text;
+    try {
+      text = await readFileAsText(file);
+    } catch (e) {
+      setText(els.bulkFileName, "No file selected");
+      showBulkError("We could not read that file. Please try another one.");
+      return;
+    }
+    if (token !== fileToken) { return; } // a newer file was chosen while this one was loading
+
+    const cleaned = cleanEmailList(extractEmailColumn(parseCsv(text)));
+    if (cleaned.found === 0) {
+      setText(els.bulkFileName, "No file selected");
+      showBulkError("We could not find any emails in that file. Use one email per line, or a column named email.");
+      return;
+    }
+
+    let emails = cleaned.emails;
+    let cutNote = "";
+    if (emails.length > CONFIG.BULK_MAX) {
+      emails = emails.slice(0, CONFIG.BULK_MAX);
+      cutNote = " The list was cut: only the first " + CONFIG.BULK_MAX + " emails will be checked.";
+    }
+
+    const invalid = emails.filter(function (e) { return !isValidEmailFormat(e); }).length;
+    pendingEmails = emails;
+
+    resetBulkOutput();
+    setText(
+      els.bulkSummary,
+      "Found " + cleaned.found + " " + plural(cleaned.found, "email") +
+      ", removed " + cleaned.duplicates + " " + plural(cleaned.duplicates, "duplicate") +
+      ", " + invalid + " " + (invalid === 1 ? "looks" : "look") + " invalid." + cutNote
+    );
+    setHidden(els.bulkSummary, false);
+  }
+
+  /*
+    Run many jobs, but only a few at the same time (a "pool").
+    items = the jobs, worker = async function for one job,
+    concurrency = how many at once, signal = lets us stop early.
+  */
+  async function runPool(items, worker, concurrency, signal) {
+    let nextIndex = 0;
+
+    async function runner() {
+      while (true) {
+        if (signal && signal.aborted) { return; }
+        const index = nextIndex++;
+        if (index >= items.length) { return; }
+        await worker(items[index], index);
+      }
+    }
+
+    const runners = [];
+    const count = Math.min(Math.max(concurrency, 1), items.length);
+    for (let i = 0; i < count; i++) { runners.push(runner()); }
+    await Promise.all(runners);
+  }
+
+  function createBulkRow(email, index) {
+    const tr = document.createElement("tr");
+    tr.id = "bulk-row-" + index;
+    tr.className = "status-unknown";
+
+    const emailCell = document.createElement("td");
+    emailCell.textContent = email;
+
+    const scoreCell = document.createElement("td");
+    const badge = document.createElement("span");
+    badge.className = "score-badge status-unknown";
+    badge.textContent = "Waiting";
+    scoreCell.appendChild(badge);
+
+    const reasonCell = document.createElement("td");
+    reasonCell.textContent = "Waiting to be checked...";
+
+    tr.appendChild(emailCell);
+    tr.appendChild(scoreCell);
+    tr.appendChild(reasonCell);
+    return { tr: tr, badge: badge, reason: reasonCell };
+  }
+
+  // Save a result and update its table row
+  function setBulkRow(index, entry) {
+    bulkResults[index] = entry;
+    const ref = bulkRowRefs[index];
+    if (!ref) { return; }
+    const cls = SCORE_CLASS[entry.score];
+    setStatusClass(ref.tr, cls);
+    setStatusClass(ref.badge, cls);
+    ref.badge.textContent = entry.checked ? SCORE_LABEL[entry.score] : "Not checked";
+    ref.reason.textContent = entry.reason;
+  }
+
+  function makeEntry(email, result) {
+    return { email: email, score: result.score, reason: result.reason, checks: result.checks, checked: true };
+  }
+
+  function updateProgress() {
+    const percent = bulkTotal === 0 ? 0 : Math.round((bulkDone / bulkTotal) * 100);
+    if (els.bulkProgress) { els.bulkProgress.value = percent; }
+    setText(els.bulkProgressText, bulkDone + " of " + bulkTotal + " checked");
+  }
+
+  // Count the results by score
+  function countScores() {
+    const counts = { good: 0, risky: 0, bad: 0, unknown: 0, notChecked: 0 };
+    bulkResults.forEach(function (entry) {
+      if (!entry) { return; }
+      if (entry.checked) { counts[entry.score]++; } else { counts.notChecked++; }
+    });
+    return counts;
+  }
+
+  // Show the Good / Risky / Bad / Unknown chips
+  function updateTotals(finished) {
+    if (!els.bulkTotals) { return; }
+    const counts = countScores();
+
+    clearChildren(els.bulkTotals);
+    VALID_SCORES.forEach(function (score) {
+      const chip = document.createElement("span");
+      chip.className = "total-chip " + SCORE_CLASS[score];
+      chip.textContent = SCORE_LABEL[score] + ": " + counts[score];
+      els.bulkTotals.appendChild(chip);
+    });
+    if (finished && counts.notChecked > 0) {
+      const chip = document.createElement("span");
+      chip.className = "total-chip status-unknown";
+      chip.textContent = "Not checked: " + counts.notChecked;
+      els.bulkTotals.appendChild(chip);
+    }
+  }
+
+  // Turn buttons on and off while the bulk check is running
+  function setBulkRunningUi(isRunning) {
+    if (els.bulkStartBtn) {
+      els.bulkStartBtn.disabled = isRunning;
+      els.bulkStartBtn.classList.toggle("is-loading", isRunning);
+      els.bulkStartBtn.setAttribute("aria-busy", isRunning ? "true" : "false");
+      els.bulkStartBtn.textContent = isRunning ? "Checking..." : BULK_START_LABEL;
+    }
+    if (els.bulkStopBtn) {
+      els.bulkStopBtn.hidden = !isRunning;
+      els.bulkStopBtn.disabled = !isRunning;
+      els.bulkStopBtn.textContent = BULK_STOP_LABEL;
+    }
+    setDisabled(els.downloadBtn, isRunning);
+    setDisabled(els.bulkFile, isRunning);
+    if (els.bulkDropZone) {
+      els.bulkDropZone.setAttribute("aria-disabled", isRunning ? "true" : "false");
+    }
+    // Do not read out every small progress step while running. The final message is read out.
+    if (els.bulkProgressText) {
+      els.bulkProgressText.setAttribute("aria-live", isRunning ? "off" : "polite");
+    }
+  }
+
+  async function startBulkCheck() {
+    if (bulkRunning) { return; } // never start a second run
+    clearBulkError();
+
+    if (pendingEmails.length === 0) {
+      showBulkError("Please choose a .csv or .txt file with at least one email first.");
+      return;
+    }
+
+    bulkRunning = true;
+    bulkController = new AbortController();
+    const signal = bulkController.signal;
+    const emails = pendingEmails.slice();
+
+    // Build the table: one "waiting" row for each email
+    resetBulkOutput();
+    bulkTotal = emails.length;
+    bulkResults = new Array(emails.length);
+    const fragment = document.createDocumentFragment();
+    emails.forEach(function (email, index) {
+      const ref = createBulkRow(email, index);
+      bulkRowRefs.push(ref);
+      fragment.appendChild(ref.tr);
+    });
+    els.bulkTableBody.appendChild(fragment);
+
+    setHidden(els.bulkProgressWrap, false);
+    setHidden(els.bulkResults, false);
+    setBulkRunningUi(true);
+
+    // Emails with a bad format are marked Bad right away (no server needed)
+    const jobs = [];
+    emails.forEach(function (email, index) {
+      if (isValidEmailFormat(email)) {
+        jobs.push({ email: email, index: index });
+      } else {
+        setBulkRow(index, makeEntry(email, buildBadFormatResult(email)));
+        bulkDone++;
+      }
+    });
+    updateProgress();
+    updateTotals(false);
+
+    // Check the rest, a few at a time
+    await runPool(jobs, async function (job) {
+      try {
+        const raw = await checkWithRetry(job.email, signal);
+        setBulkRow(job.index, makeEntry(job.email, normalizeResult(raw, job.email)));
+      } catch (err) {
+        if (isCancelled(err) || signal.aborted) { return; } // stopped: handled below
+        // Failed twice: mark as Unknown with a plain reason
+        setBulkRow(job.index, {
+          email: job.email,
+          score: "unknown",
+          reason: friendlyMessage(err),
+          checks: null,
+          checked: true
+        });
+      }
+      bulkDone++;
+      updateProgress();
+      updateTotals(false);
+    }, CONFIG.BULK_CONCURRENCY, signal);
+
+    // Finish: mark anything that was not reached
+    const wasStopped = signal.aborted;
+    emails.forEach(function (email, index) {
+      if (!bulkResults[index]) {
+        setBulkRow(index, {
+          email: email,
+          score: "unknown",
+          reason: "Not checked (stopped).",
+          checks: null,
+          checked: false
+        });
+      }
+    });
+
+    bulkRunning = false;
+    bulkController = null;
+    setBulkRunningUi(false);
+    updateProgress();
+    updateTotals(true);
+
+    // Final message (screen readers read this one out)
+    const counts = countScores();
+    setText(
+      els.bulkProgressText,
+      (wasStopped ? "Stopped. " : "Done. ") + bulkDone + " of " + bulkTotal + " checked. " +
+      "Good " + counts.good + ", Risky " + counts.risky + ", Bad " + counts.bad + ", Unknown " + counts.unknown + "."
+    );
+  }
+
+  function stopBulkCheck() {
+    if (!bulkRunning || !bulkController) { return; }
+    bulkController.abort();
+    if (els.bulkStopBtn) {
+      els.bulkStopBtn.disabled = true;
+      els.bulkStopBtn.textContent = "Stopping...";
+    }
+  }
+
+  // Build and download the results file
+  function downloadCsv() {
+    if (bulkRunning || bulkResults.length === 0) { return; }
+
+    const header = ["Email", "Score", "Reason"].concat(CHECKS.map(function (def) { return def.csvName; }));
+    const rows = [header];
+
+    bulkResults.forEach(function (entry) {
+      if (!entry) { return; }
+      const scoreText = entry.checked ? SCORE_LABEL[entry.score] : "Not checked";
+      const line = [entry.email, scoreText, entry.reason];
+
+      CHECKS.forEach(function (def) {
+        const check = entry.checks ? entry.checks[def.key] : null;
+        if (!check) { line.push(""); return; }
+        let cell = STATUS_LABEL[check.status];
+        if (check.detail) { cell += ": " + check.detail; }
+        if (check.suggestion) { cell += " (suggested domain: " + check.suggestion + ")"; }
+        line.push(cell);
+      });
+      rows.push(line);
+    });
+
+    // The BOM at the start helps Excel read the file as UTF-8
+    const csv = "\uFEFF" + toCsv(rows);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "mailcheck-results-" + todayStamp() + ".csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function hasFiles(event) {
+    const types = event.dataTransfer && event.dataTransfer.types;
+    return !!types && Array.prototype.indexOf.call(types, "Files") !== -1;
+  }
+
+  function initBulk() {
+    // File picker
+    if (els.bulkFile) {
+      els.bulkFile.addEventListener("change", function () {
+        const file = els.bulkFile.files && els.bulkFile.files[0];
+        els.bulkFile.value = ""; // lets the user pick the same file again later
+        if (file) { handleBulkFile(file); }
+      });
+    }
+
+    // Drag and drop
+    const zone = els.bulkDropZone;
+    if (zone) {
+      ["dragenter", "dragover"].forEach(function (type) {
+        zone.addEventListener(type, function (event) {
+          event.preventDefault();
+          if (event.dataTransfer) { event.dataTransfer.dropEffect = bulkRunning ? "none" : "copy"; }
+          if (!bulkRunning) { zone.classList.add("dragover"); }
+        });
+      });
+
+      zone.addEventListener("dragleave", function (event) {
+        if (!zone.contains(event.relatedTarget)) { zone.classList.remove("dragover"); }
+      });
+
+      zone.addEventListener("drop", function (event) {
+        event.preventDefault();
+        zone.classList.remove("dragover");
+        const files = event.dataTransfer && event.dataTransfer.files;
+        if (files && files.length > 0) { handleBulkFile(files[0]); }
+      });
+
+      // Clicking empty space in the zone also opens the file picker
+      zone.addEventListener("click", function (event) {
+        if (bulkRunning || !els.bulkFile) { return; }
+        if (event.target.closest("label, input")) { return; }
+        els.bulkFile.click();
+      });
+    }
+
+    // If a file is dropped outside the zone, do not let the browser open it
+    ["dragover", "drop"].forEach(function (type) {
+      window.addEventListener(type, function (event) {
+        if (hasFiles(event)) { event.preventDefault(); }
+      });
+    });
+
+    if (els.bulkStartBtn) { els.bulkStartBtn.addEventListener("click", startBulkCheck); }
+    if (els.bulkStopBtn) { els.bulkStopBtn.addEventListener("click", stopBulkCheck); }
+    if (els.downloadBtn) { els.downloadBtn.addEventListener("click", downloadCsv); }
+  }
+
+  /* ========================================================
+     10. START-UP
+     ======================================================== */
+  function init() {
+    initTheme();
+    initSingleCheck();
+    initBulk();
+    setHidden(els.demoBadge, !DEMO_MODE); // show "Demo mode" only while demo mode is on
+  }
+
+  init();
+})();
+  </script>
+</body>
+</html>
